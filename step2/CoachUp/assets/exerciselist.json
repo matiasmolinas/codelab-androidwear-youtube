@@ -1,0 +1,17 @@
+{
+exercise_list:
+[
+{
+name: "abdominals.json",
+summary: "Abdominal exercise 3 x 20",
+title: "Abdominals",
+img: "abdominals.png"
+},
+{
+name: "pushups.json",
+summary: "Pushups 3 x 15",
+title: "Pushups",
+img: "pushups.png"
+}
+]
+}

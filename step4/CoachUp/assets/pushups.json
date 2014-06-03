@@ -1,0 +1,9 @@
+{
+name: "pushups.json",
+summary: "Pushups 3 x 15",
+title: "Pushups",
+img: "pushups.png",
+video_id: "FHq-NoK0RKI",
+latitude: 60.0,
+longitude: 30.0
+}
