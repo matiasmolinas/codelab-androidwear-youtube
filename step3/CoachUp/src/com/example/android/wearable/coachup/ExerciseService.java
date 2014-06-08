@@ -12,9 +12,8 @@ import android.os.IBinder;
 import android.preview.support.v4.app.NotificationManagerCompat;
 import android.preview.support.wearable.notifications.WearableNotifications;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 // ----------------------------------------------------------------------------
-
-import java.util.ArrayList;
 
 import com.google.android.youtube.player.YouTubeIntents;
 
@@ -23,6 +22,8 @@ import com.google.android.youtube.player.YouTubeIntents;
 * send it to the Android Wear Device
 */
 public class ExerciseService extends Service {
+	private static final String TAG = "CoachUp";
+	
     private NotificationManagerCompat mNotificationManager;
     private Binder mBinder = new LocalBinder();
     private Exercise mExercise;
@@ -56,15 +57,11 @@ public class ExerciseService extends Service {
     private void createNotification(Intent intent) {
     	//We retrieve the exercise from the resources
         mExercise = Exercise.fromBundle(intent.getBundleExtra(Constants.EXTRA_EXERCISE));
+        Bitmap bmp = (Bitmap) intent.getParcelableExtra(Constants.EXTRA_EXERCISE_BMP);
         //We retrieve the resources of the exercise main card
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
 
-        if (mExercise.exerciseImage != null) {
-            Bitmap exerciseImage = Bitmap.createScaledBitmap(
-                    AssetUtils.loadBitmapAsset(this, mExercise.exerciseImage),
-                    Constants.NOTIFICATION_IMAGE_WIDTH, Constants.NOTIFICATION_IMAGE_HEIGHT, false);
-            builder.setLargeIcon(exerciseImage);
-        }
+	    builder.setLargeIcon(bmp);
         builder.setContentTitle(mExercise.titleText);
         builder.setContentText(mExercise.summaryText);
         builder.setSmallIcon(R.mipmap.ic_notification_recipe);

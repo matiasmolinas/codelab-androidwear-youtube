@@ -1,18 +1,20 @@
 package com.example.android.wearable.coachup;
 
+import java.net.URL;
+import java.util.List;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.json.JSONObject;
@@ -38,7 +40,9 @@ public class ExerciseActivity extends Activity {
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG, "Intent: " + intent.toString() + " " + mExerciseName);
         }
-        loadExercise();
+        
+        // call AsynTask to perform network operation on separate thread
+        new LoadExerciseAsyncTask().execute(Constants.VIDEOS_URL + mExerciseName);
     }
 
     @Override
@@ -67,13 +71,11 @@ public class ExerciseActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void loadExercise() {
-        JSONObject jsonObject = AssetUtils.loadJSONAsset(this, mExerciseName);
-        if (jsonObject != null) {
-            mExercise = Exercise.fromJson(this, jsonObject);
-            if (mExercise != null) {
-                displayExercise(mExercise);
-            }
+    private void loadExercise(Exercise exercise) 
+    {
+        mExercise = exercise;
+        if (mExercise != null) {
+            displayExercise(mExercise);
         }
     }
 
@@ -84,8 +86,7 @@ public class ExerciseActivity extends Activity {
         mSummaryTextView.setText(exercise.summaryText);
         if (exercise.exerciseImage != null) {
             mImageView.setAnimation(fadeIn);
-            Bitmap exerciseImage = AssetUtils.loadBitmapAsset(this, exercise.exerciseImage);
-            mImageView.setImageBitmap(exerciseImage);
+            mImageView.setImageBitmap(exercise.bmp);
         }
     }
 
@@ -93,6 +94,38 @@ public class ExerciseActivity extends Activity {
         Intent intent = new Intent(this, ExerciseService.class);
         intent.setAction(Constants.ACTION_START_EXERCISE);
         intent.putExtra(Constants.EXTRA_EXERCISE, mExercise.toBundle());
+        Bitmap exerciseImage = Bitmap.createScaledBitmap(
+                mExercise.bmp,
+                Constants.NOTIFICATION_IMAGE_WIDTH, Constants.NOTIFICATION_IMAGE_HEIGHT, false);
+        intent.putExtra(Constants.EXTRA_EXERCISE_BMP, exerciseImage);
         startService(intent);
     }
+    
+    private class LoadExerciseAsyncTask extends AsyncTask<String, Void, Exercise> {
+		@Override
+		protected Exercise doInBackground(String... urls) {
+			Exercise exercise = null;
+			try{
+				//Retrieve videos json from YouTube service
+				JSONObject videos = AssetUtils.callService(urls[0]);
+				//Get exercises from videos json
+				List<Exercise> exerciseList = AssetUtils.getExerciseListFromVideosJson(videos);
+				exercise = exerciseList.get(0);
+						
+				URL url = new URL(exercise.exerciseImage);
+				Bitmap bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+				exercise.bmp = bmp;
+			}
+			catch (Exception e) {
+				Log.e(TAG, "Failed to load exercise: " + e);
+			}
+			return exercise;
+		}
+
+		// onPostExecute displays the results of the AsyncTask.
+		@Override
+		protected void onPostExecute(Exercise exercise) {
+			ExerciseActivity.this.loadExercise(exercise);
+		}
+	}
 }

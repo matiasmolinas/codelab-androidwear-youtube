@@ -1,15 +1,11 @@
 package com.example.android.wearable.coachup;
 
-import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.util.Log;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.ArrayList;
 
 /**
 * Object model class to represent a exercise
@@ -23,21 +19,26 @@ public class Exercise {
     public String videoId;
     public double latitude;
     public double longitude;
+    public Bitmap bmp;
 
     public Exercise() {
     }
 
-    public static Exercise fromJson(Context context, JSONObject json) {
+    public static Exercise fromJson(JSONObject videoJson) {
     	Exercise exercise = new Exercise();
         try {
-        	exercise.titleText = json.getString(Constants.EXERCISE_FIELD_TITLE);
-        	exercise.summaryText = json.getString(Constants.EXERCISE_FIELD_SUMMARY);
-            if (json.has(Constants.EXERCISE_FIELD_IMAGE)) {
-            	exercise.exerciseImage = json.getString(Constants.EXERCISE_FIELD_IMAGE);
-            }
-            exercise.videoId = json.getString(Constants.EXERCISE_FIELD_VIDEO_ID);
-            exercise.latitude = json.getDouble(Constants.EXERCISE_FIELD_LATITUDE);
-            exercise.longitude = json.getDouble(Constants.EXERCISE_FIELD_LONGITUDE);
+        	exercise.videoId = videoJson.getString("id");
+        	JSONObject snippet = videoJson.getJSONObject("snippet");
+        	exercise.titleText = snippet.getString("title");
+        	exercise.summaryText = snippet.getString("description");
+        	JSONObject thumbnails = snippet.getJSONObject("thumbnails");
+        	JSONObject standard = thumbnails.getJSONObject("standard");
+        	exercise.exerciseImage = standard.getString("url");
+        	
+        	JSONObject recordingDetails = videoJson.getJSONObject("recordingDetails");
+        	JSONObject location = recordingDetails.getJSONObject("location");
+        	exercise.latitude = location.getDouble("latitude");
+        	exercise.longitude = location.getDouble("latitude");
         } catch (JSONException e) {
             Log.e(TAG, "Error loading exercise: " + e);
             return null;

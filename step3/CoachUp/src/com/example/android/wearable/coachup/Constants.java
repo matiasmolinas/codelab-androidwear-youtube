@@ -6,10 +6,9 @@ package com.example.android.wearable.coachup;
 public final class Constants {
     private Constants() {
     }
-    public static final String EXERCISE_LIST_FILE = "exerciselist.json";
+    
     public static final String EXERCISE_NAME_TO_LOAD = "exercise_name";
 
-    public static final String EXERCISE_FIELD_LIST = "exercise_list";
     public static final String EXERCISE_FIELD_IMAGE = "img";
     public static final String EXERCISE_FIELD_VIDEO_ID = "video_id";
     public static final String EXERCISE_FIELD_LATITUDE = "latitude";
@@ -22,6 +21,7 @@ public final class Constants {
     static final String ACTION_START_EXERCISE =
             "com.example.android.wearable.coachup.START_EXERCISE";
     public static final String EXTRA_EXERCISE = "exercise";
+    public static final String EXTRA_EXERCISE_BMP = "exercise_bmp";
 
     public static final int NOTIFICATION_ID = 0;
     public static final int NOTIFICATION_IMAGE_WIDTH = 280;
