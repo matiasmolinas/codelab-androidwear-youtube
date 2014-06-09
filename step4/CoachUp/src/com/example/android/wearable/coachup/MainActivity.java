@@ -1,8 +1,12 @@
 
 package com.example.android.wearable.coachup;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.location.Geofence;
 
 import android.app.Dialog;
 import android.app.ListActivity;
@@ -27,7 +31,9 @@ public class MainActivity extends ListActivity implements android.location.Locat
     public LocationManager locationManager;
     public String provider; // location provider
     
-
+    // Internal List of Geofence objects
+    List<Geofence> mGeofenceList;
+    
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         if (Log.isLoggable(TAG, Log.DEBUG)) {
@@ -71,10 +77,18 @@ public class MainActivity extends ListActivity implements android.location.Locat
             
             // every 20secs request
             locationManager.requestLocationUpdates(provider, 20000, 0, this);
+            
+            // Instantiate the current List of geofences
+            mGeofenceList = new ArrayList<Geofence>();
 
 	    	mAdapter = new ExerciseListAdapter(this);
 	    	setListAdapter(mAdapter);
 	    }
+    }
+    
+    public void setGeofenceList(List<Geofence> geofenceList){
+    	mGeofenceList = geofenceList;
+    	
     }
 
 	@Override

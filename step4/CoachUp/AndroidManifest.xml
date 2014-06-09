@@ -35,6 +35,8 @@
         </activity>
         <service
             android:name=".ExerciseService" />
+        <service android:name=".ReceiveTransitionsIntentService" android:exported="false"></service>
+        
     </application>
 
 </manifest>
