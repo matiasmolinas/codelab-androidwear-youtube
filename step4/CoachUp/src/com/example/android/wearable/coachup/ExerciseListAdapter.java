@@ -4,10 +4,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,18 +17,9 @@ import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,51 +40,31 @@ public class ExerciseListAdapter implements ListAdapter {
 	private List<Item> mItems = new ArrayList<Item>();
 	private Context mContext;
 	private DataSetObserver mObserver;
+	
 
 	public ExerciseListAdapter(Context context) {
 		mContext = context;
-		//loadExerciseList();
-		
 		// call AsynTask to perform network operation on separate thread
-        new HttpAsyncTask().execute(Constants.PLAYLIST_ITEMS_URL,Constants.VIDEOS_URL);
+        new LoadExerciseAsyncTask().execute(Constants.PLAYLIST_ITEMS_URL,Constants.VIDEOS_URL);
 	}
 
-	private void loadExerciseList() {
-		JSONObject jsonObject = AssetUtils.loadJSONAsset(mContext,
-				Constants.EXERCISE_LIST_FILE);
-		if (jsonObject != null) {
-			List<Item> items = parseJson(jsonObject);
-			appendItemsToList(items);
-		}
+	public void loadExercises(List<Exercise> exerciseList) {
+		List<Item> items = parseExercises(exerciseList);
+		appendItemsToList(items);
 	}
-
-	public void loadExercises(JSONObject jsonObject) {
-		if (jsonObject != null) {
-			List<Item> items = parseJson(jsonObject);
-			appendItemsToList(items);
-		}
-	}
-
-	private List<Item> parseJson(JSONObject json) {
+	
+	private List<Item> parseExercises(List<Exercise> exerciseList) {
 		List<Item> result = new ArrayList<Item>();
 		try {
-			JSONArray items = json.getJSONArray(Constants.EXERCISE_FIELD_LIST);
-			for (int i = 0; i < items.length(); i++) {
-				JSONObject item = items.getJSONObject(i);
+			for (Exercise exercise : exerciseList) {
 				Item parsed = new Item();
-				parsed.name = item.getString(Constants.EXERCISE_FIELD_NAME);
-				parsed.title = item.getString(Constants.EXERCISE_FIELD_TITLE);
-				if (item.has(Constants.EXERCISE_FIELD_IMAGE)) {
-					String imageFile = item
-							.getString(Constants.EXERCISE_FIELD_IMAGE);
-					parsed.image = AssetUtils.loadBitmapAsset(mContext,
-							imageFile);
-				}
-				parsed.summary = item
-						.getString(Constants.EXERCISE_FIELD_SUMMARY);
+				parsed.name = exercise.videoId;
+				parsed.title = exercise.titleText;
+				parsed.image = exercise.bmp;
+				parsed.summary = exercise.summaryText;
 				result.add(parsed);
 			}
-		} catch (JSONException e) {
+		} catch (Exception e) {
 			Log.e(TAG, "Failed to parse exercise list: " + e);
 		}
 		return result;
@@ -139,6 +111,7 @@ public class ExerciseListAdapter implements ListAdapter {
 
 		titleView.setText(item.title);
 		summaryView.setText(item.summary);
+		
 		if (item.image != null) {
 			iv.setImageBitmap(item.image);
 		} else {
@@ -187,40 +160,6 @@ public class ExerciseListAdapter implements ListAdapter {
 		return mItems.get(position).name;
 	}
 
-	private static String convertInputStreamToString(InputStream inputStream)
-			throws IOException {
-		BufferedReader bufferedReader = new BufferedReader(
-				new InputStreamReader(inputStream));
-		String line = "";
-		String result = "";
-		while ((line = bufferedReader.readLine()) != null)
-			result += line;
-
-		inputStream.close();
-		return result;
-	}
-
-	public static JSONObject callService(String url) {
-		InputStream inputStream = null;
-		JSONObject result = null;
-		try {
-			// create HttpClient
-			HttpClient httpclient = new DefaultHttpClient();
-			// make GET request to the given URL
-			HttpResponse httpResponse = httpclient.execute(new HttpGet(url));
-			// receive response as inputStream
-			inputStream = httpResponse.getEntity().getContent();
-			// convert inputstream to string
-			if (inputStream != null){
-				String response = convertInputStreamToString(inputStream);
-				result = new JSONObject(response);
-			}
-		} catch (Exception e) {
-			Log.d("InputStream", e.getLocalizedMessage());
-		}
-		return result;
-	}
-
 	public boolean isConnected() {
 		ConnectivityManager connMgr = (ConnectivityManager) mContext
 				.getSystemService(Activity.CONNECTIVITY_SERVICE);
@@ -231,40 +170,36 @@ public class ExerciseListAdapter implements ListAdapter {
 			return false;
 	}
 	
-	private String getVideoIdsFromPlaylistItemsJson(JSONObject playlistItems){
-		String ids = "";
-		List<String> videoIds = new ArrayList<String>();
-		try {
-			JSONArray items = playlistItems.getJSONArray("items"); // get playlistitems array
-			for (int i =0;i<items.length(); i++){
-				JSONObject item = items.getJSONObject(i);
-				JSONObject snippet = item.getJSONObject("snippet");
-				JSONObject resourceId = snippet.getJSONObject("resourceId");
-				String videoId = resourceId.getString("videoId");
-				videoIds.add(videoId);
-			}
-			ids = TextUtils.join(",", videoIds);
-		} catch (JSONException e) {
-			Log.d("getVideoIdsFromPlaylistItemsJson", e.getLocalizedMessage());
-		}
-		return ids;
-	}
+	
 
-	private class HttpAsyncTask extends AsyncTask<String, Void, JSONObject> {
+	private class LoadExerciseAsyncTask extends AsyncTask<String, Void, List<Exercise>> {
 		@Override
-		protected JSONObject doInBackground(String... urls) {
-			JSONObject playlistItems = callService(urls[0]);
-			//Get video ids from playlistitems json
-			String videoIds = getVideoIdsFromPlaylistItemsJson(playlistItems);
-			//Retrieve videos json from YouTube service
-			JSONObject videos = callService(urls[1] + videoIds);
-			return videos;
+		protected List<Exercise> doInBackground(String... urls) {
+			List<Exercise> exerciseList = null;
+			try{
+				JSONObject playlistItems = AssetUtils.callService(urls[0]);
+				//Get video ids from playlistitems json
+				String videoIds = AssetUtils.getVideoIdsFromPlaylistItemsJson(playlistItems);
+				//Retrieve videos json from YouTube service
+				JSONObject videos = AssetUtils.callService(urls[1] + videoIds);
+				//Get exercises from videos json
+				exerciseList = AssetUtils.getExerciseListFromVideosJson(videos);
+				for (Exercise exercise : exerciseList){
+					URL url = new URL(exercise.exerciseImage);
+					Bitmap bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+					exercise.bmp = bmp;
+				}
+			}
+			catch (Exception e) {
+				Log.e(TAG, "Failed to load exercise list: " + e);
+			}
+			return exerciseList;
 		}
 
 		// onPostExecute displays the results of the AsyncTask.
 		@Override
-		protected void onPostExecute(JSONObject videosJson) {
-			ExerciseListAdapter.this.loadExercises(videosJson);
+		protected void onPostExecute(List<Exercise> exerciseList) {
+			ExerciseListAdapter.this.loadExercises(exerciseList);
 		}
 	}
 }
