@@ -52,21 +52,6 @@ public class ReceiveTransitionsIntentService extends IntentService {
             // Get the error code
             int errorCode = LocationClient.getErrorCode(intent);
 
-            // Get the error message
-            String errorMessage = LocationServiceErrorMessages.getErrorString(this, errorCode);
-
-//            // Log the error
-//            Log.e(GeofenceUtils.APPTAG,
-//                    getString(R.string.geofence_transition_error_detail, errorMessage)
-//            );
-
-            // Set the action and error message for the broadcast intent
-            broadcastIntent.setAction(GeofenceUtils.ACTION_GEOFENCE_ERROR)
-                           .putExtra(GeofenceUtils.EXTRA_GEOFENCE_STATUS, errorMessage);
-
-            // Broadcast the error *locally* to other components in this app
-            LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
-
         // If there's no error, get the transition type and create a notification
         } else {
 
@@ -87,20 +72,10 @@ public class ReceiveTransitionsIntentService extends IntentService {
                     geofenceIds[index] = geofences.get(index).getRequestId();
                 }
                 String ids = TextUtils.join(GeofenceUtils.GEOFENCE_ID_DELIMITER,geofenceIds);
-                String transitionType = getTransitionString(transition);
-
-                sendNotification(transitionType, ids);
-
-//                // Log the transition type and a message
-//                Log.d(GeofenceUtils.APPTAG,
-//                        getString(
-//                                R.string.geofence_transition_notification_title,
-//                                transitionType,
-//                                ids));
-//                Log.d(GeofenceUtils.APPTAG,
-//                        getString(R.string.geofence_transition_notification_text));
-
-            // An invalid transition was reported
+                
+                if (transition == Geofence.GEOFENCE_TRANSITION_ENTER){
+                	//sendNotification(transitionType, ids);
+                }
             } else {
 //                // Always log as an error
 //                Log.e(GeofenceUtils.APPTAG,
@@ -153,23 +128,4 @@ public class ReceiveTransitionsIntentService extends IntentService {
         mNotificationManager.notify(0, builder.build());
     }
 
-    /**
-     * Maps geofence transition types to their human-readable equivalents.
-     * @param transitionType A transition type constant defined in Geofence
-     * @return A String indicating the type of transition
-     */
-    private String getTransitionString(int transitionType) {
-//        switch (transitionType) {
-//
-//            case Geofence.GEOFENCE_TRANSITION_ENTER:
-//                return getString(R.string.geofence_transition_entered);
-//
-//            case Geofence.GEOFENCE_TRANSITION_EXIT:
-//                return getString(R.string.geofence_transition_exited);
-//
-//            default:
-//                return getString(R.string.geofence_transition_unknown);
-//        }
-    	return null;
-    }
 }
