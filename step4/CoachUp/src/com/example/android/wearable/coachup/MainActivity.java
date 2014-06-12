@@ -29,7 +29,8 @@ public class MainActivity extends ListActivity implements android.location.Locat
     
     // GPS location
     public LocationManager locationManager;
-    public String provider; // location provider
+    // location provider
+    public String provider; 
     
     // Internal List of Geofence objects
     List<Geofence> mGeofenceList;

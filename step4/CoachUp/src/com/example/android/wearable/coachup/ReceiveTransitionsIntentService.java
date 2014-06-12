@@ -15,7 +15,6 @@ import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -44,7 +43,7 @@ public class ReceiveTransitionsIntentService extends IntentService {
         Intent broadcastIntent = new Intent();
 
         // Give it the category for all intents sent by the Intent Service
-        broadcastIntent.addCategory(GeofenceUtils.CATEGORY_LOCATION_SERVICES);
+        broadcastIntent.addCategory("com.example.android.wearable.coachup.CATEGORY_LOCATION_SERVICES");
 
         // First check for errors
         if (LocationClient.hasError(intent)) {
@@ -71,7 +70,7 @@ public class ReceiveTransitionsIntentService extends IntentService {
                 for (int index = 0; index < geofences.size() ; index++) {
                     geofenceIds[index] = geofences.get(index).getRequestId();
                 }
-                String ids = TextUtils.join(GeofenceUtils.GEOFENCE_ID_DELIMITER,geofenceIds);
+                String ids = TextUtils.join(",",geofenceIds);
                 
                 if (transition == Geofence.GEOFENCE_TRANSITION_ENTER){
                 	//sendNotification(transitionType, ids);
