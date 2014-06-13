@@ -41,9 +41,16 @@ public class ExerciseListAdapter implements ListAdapter {
 	private Context mContext;
 	private DataSetObserver mObserver;
 	
+	// Add geofences handler
+    private GeofenceRequester mGeofenceRequester;
+	
 
 	public ExerciseListAdapter(Context context) {
 		mContext = context;
+		
+		// Instantiate a Geofence requester
+        mGeofenceRequester = new GeofenceRequester((Activity)mContext);
+        
 		// call AsynTask to perform network operation on separate thread
         new LoadExerciseAsyncTask().execute(Constants.PLAYLIST_ITEMS_URL,Constants.VIDEOS_URL);
 	}
