@@ -9,6 +9,7 @@ import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +19,8 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import org.json.JSONObject;
+
+import com.google.android.gms.location.Geofence;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -29,6 +32,20 @@ import java.util.List;
  */
 public class ExerciseListAdapter implements ListAdapter {
 	private String TAG = "ExerciseListAdapter";
+	
+	/*
+     * Use to set an expiration time for a geofence. After this amount
+     * of time Location Services will stop tracking the geofence.
+     * Remember to unregister a geofence when you're finished with it.
+     * Otherwise, your app will use up battery. To continue monitoring
+     * a geofence indefinitely, set the expiration time to
+     * Geofence#NEVER_EXPIRE.
+     */
+    private static final long GEOFENCE_EXPIRATION_IN_HOURS = 12;
+    private static final long GEOFENCE_EXPIRATION_IN_MILLISECONDS =
+            GEOFENCE_EXPIRATION_IN_HOURS * DateUtils.HOUR_IN_MILLIS;
+    
+    private static final float GEOFENCE_RADIUS = 50.0f;
 
 	private class Item {
 		String title;
@@ -43,13 +60,17 @@ public class ExerciseListAdapter implements ListAdapter {
 	
 	// Add geofences handler
     private GeofenceRequester mGeofenceRequester;
+    
+    // Store a list of geofences to add
+    List<Geofence> mCurrentGeofences;
 	
-
 	public ExerciseListAdapter(Context context) {
 		mContext = context;
 		
 		// Instantiate a Geofence requester
         mGeofenceRequester = new GeofenceRequester((Activity)mContext);
+        
+        mCurrentGeofences = new ArrayList<Geofence>();
         
 		// call AsynTask to perform network operation on separate thread
         new LoadExerciseAsyncTask().execute(Constants.PLAYLIST_ITEMS_URL,Constants.VIDEOS_URL);
@@ -70,6 +91,18 @@ public class ExerciseListAdapter implements ListAdapter {
 				parsed.image = exercise.bmp;
 				parsed.summary = exercise.summaryText;
 				result.add(parsed);
+				
+				Geofence geofence = new Geofence.Builder()
+                .setRequestId(exercise.videoId)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                .setCircularRegion(
+                		exercise.latitude,
+                		exercise.longitude,
+                		GEOFENCE_RADIUS)
+                .setExpirationDuration(GEOFENCE_EXPIRATION_IN_MILLISECONDS)
+                .build();
+				
+				mCurrentGeofences.add(geofence);
 			}
 		} catch (Exception e) {
 			Log.e(TAG, "Failed to parse exercise list: " + e);
@@ -82,6 +115,8 @@ public class ExerciseListAdapter implements ListAdapter {
 		if (mObserver != null) {
 			mObserver.onChanged();
 		}
+		
+		mGeofenceRequester.addGeofences(mCurrentGeofences);
 	}
 
 	@Override
